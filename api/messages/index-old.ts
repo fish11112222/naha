@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { getGlobalStore, type Message } from '../shared-storage';
+import { getGlobalStore, type Message } from './shared-storage';
+
+
 
 // Enable CORS
 function enableCors(res: VercelResponse) {
@@ -10,9 +12,51 @@ function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 }
 
-// Use shared global store
-const globalStore = getGlobalStore();
-const messages = globalStore.messages;
+// Initialize persistent store if not exists
+if (!global.vercelMessageStore) {
+  global.vercelMessageStore = {
+    messages: [
+  {
+    id: 1,
+    content: "สวัสดีครับ ยินดีต้อนรับสู่ห้องแชท!",
+    username: "Panida ใสใจ",
+    userId: 18581680,
+    createdAt: "2025-07-22T12:00:00.000Z",
+    updatedAt: null,
+    attachmentUrl: null,
+    attachmentType: null,
+    attachmentName: null
+  },
+  {
+    id: 2,
+    content: "สวัสดีครับ ผมชื่อ Kuy",
+    username: "Kuy Kuy",
+    userId: 71157855,
+    createdAt: "2025-07-23T03:10:00.000Z",
+    updatedAt: null,
+    attachmentUrl: null,
+    attachmentType: null,
+    attachmentName: null
+  },
+  {
+    id: 3,
+    content: "แอปนี้ทำงานได้ดีมากเลย!",
+    username: "Panida ใสใจ", 
+    userId: 18581680,
+    createdAt: "2025-07-23T03:15:00.000Z",
+    updatedAt: null,
+    attachmentUrl: null,
+    attachmentType: null,
+    attachmentName: null
+  }
+    ],
+    lastModified: Date.now()
+  };
+}
+
+// Always use the shared store
+const messageStore = global.vercelMessageStore!;
+const messages = messageStore.messages;
 
 const messageSchema = z.object({
   content: z.string().min(0, ""),  // Allow empty content for image/gif only messages

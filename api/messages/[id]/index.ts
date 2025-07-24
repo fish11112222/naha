@@ -1,23 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-
-// Inline type definition to avoid import issues
-interface Message {
-  id: number;
-  content: string;
-  username: string;
-  userId: number;
-  createdAt: string;
-  updatedAt: string | null;
-  attachmentUrl: string | null;
-  attachmentType: string | null;
-  attachmentName: string | null;
-}
-
-// Global declaration
-declare global {
-  var globalMessages: Message[] | undefined;
-}
+import { getGlobalStore } from '../../shared-storage';
 
 // Enable CORS
 function enableCors(res: VercelResponse) {
@@ -27,44 +10,9 @@ function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 }
 
-// Global storage that persists across function calls
-global.globalMessages = global.globalMessages || [
-  {
-    id: 1,
-    content: "สวัสดีครับ ยินดีต้อนรับสู่ห้องแชท!",
-    username: "Panida ใสใจ",
-    userId: 18581680,
-    createdAt: "2025-07-22T12:00:00.000Z",
-    updatedAt: null,
-    attachmentUrl: null,
-    attachmentType: null,
-    attachmentName: null
-  },
-  {
-    id: 2,
-    content: "สวัสดีครับ ผมชื่อ Kuy",
-    username: "Kuy Kuy",
-    userId: 71157855,
-    createdAt: "2025-07-23T03:10:00.000Z",
-    updatedAt: null,
-    attachmentUrl: null,
-    attachmentType: null,
-    attachmentName: null
-  },
-  {
-    id: 3,
-    content: "แอปนี้ทำงานได้ดีมากเลย!",
-    username: "Panida ใสใจ",
-    userId: 18581680,
-    createdAt: "2025-07-23T03:15:00.000Z",
-    updatedAt: null,
-    attachmentUrl: null,
-    attachmentType: null,
-    attachmentName: null
-  }
-];
-
-const messages = global.globalMessages || [];
+// Use shared global store
+const globalStore = getGlobalStore();
+const messages = globalStore.messages;
 
 const updateMessageSchema = z.object({
   content: z.string().min(1),
@@ -109,13 +57,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ message: 'ไม่พบข้อความ' });
       }
       
-      // Update the message in global storage
-      messages[messageIndex].content = validatedData.content;
-      messages[messageIndex].updatedAt = new Date().toISOString();
-      global.globalMessages = messages;
+      // Update the message in global store
+      globalStore.messages[messageIndex].content = validatedData.content;
+      globalStore.messages[messageIndex].updatedAt = new Date().toISOString();
+      globalStore.lastModified = Date.now();
       
       return res.status(200).json({ 
-        ...messages[messageIndex], 
+        ...globalStore.messages[messageIndex], 
         message: 'แก้ไขข้อความเรียบร้อยแล้ว' 
       });
     }
@@ -138,9 +86,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ message: 'คุณไม่สามารถลบข้อความของผู้อื่นได้' });
       }
       
-      // Remove the message from global storage
-      messages.splice(messageIndex, 1);
-      global.globalMessages = messages;
+      // Remove the message from global store and update timestamp
+      globalStore.messages.splice(messageIndex, 1);
+      globalStore.lastModified = Date.now();
       
       return res.status(204).end();
     }
