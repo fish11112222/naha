@@ -27,10 +27,14 @@ function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 }
 
-// Initialize and get messages
+// Shared storage key for all serverless functions  
+const STORAGE_KEY = 'vercel-messages-shared';
+
+// Initialize and get messages with shared storage
 function getMessages(): Message[] {
-  if (!global.globalMessages) {
-    global.globalMessages = [
+  // Check if we have shared storage first
+  if (!(global as any)[STORAGE_KEY]) {
+    (global as any)[STORAGE_KEY] = [
       {
         id: 1,
         content: "สวัสดีครับ ยินดีต้อนรับสู่ห้องแชท!",
@@ -66,7 +70,19 @@ function getMessages(): Message[] {
       }
     ];
   }
-  return global.globalMessages;
+  
+  // Fallback to globalMessages for backward compatibility
+  if (!global.globalMessages) {
+    global.globalMessages = (global as any)[STORAGE_KEY];
+  }
+  
+  return (global as any)[STORAGE_KEY];
+}
+
+// Save messages to shared storage
+function saveMessages(messages: Message[]): void {
+  (global as any)[STORAGE_KEY] = messages;
+  global.globalMessages = messages;
 }
 
 const updateMessageSchema = z.object({
@@ -117,6 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const currentMessages = getMessages();
       currentMessages[messageIndex].content = validatedData.content;
       currentMessages[messageIndex].updatedAt = new Date().toISOString();
+      saveMessages(currentMessages);
       
       return res.status(200).json({ 
         ...currentMessages[messageIndex], 
@@ -159,6 +176,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Remove the message from global storage
       const currentMessages = getMessages();
       currentMessages.splice(messageIndex, 1);
+      saveMessages(currentMessages);
       
       console.log(`Message deleted. Remaining: ${currentMessages.length} messages`);
       return res.status(204).end();
