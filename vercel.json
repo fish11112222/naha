@@ -19,44 +19,19 @@
   "rewrites": [
     {
       "source": "/api/auth/signup",
-      "destination": "/api/auth/signup-database"
+      "destination": "/api/auth"
     },
     {
       "source": "/api/auth/signin", 
-      "destination": "/api/auth/signin-database"
+      "destination": "/api/auth"
     },
-    {
-      "source": "/api/users/count",
-      "destination": "/api/users/count"
-    },
-    {
-      "source": "/api/users/online",
-      "destination": "/api/users/online"
-    },
-    {
-      "source": "/api/users/([^/]+)/activity",
-      "destination": "/api/users/$1/activity"
-    },
-    {
-      "source": "/api/users/([^/]+)/profile",
-      "destination": "/api/users/$1/profile"
-    },
-    {
-      "source": "/api/users/([^/]+)",
-      "destination": "/api/users/$1/profile"
-    },
-    {
-      "source": "/api/users",
-      "destination": "/api/users/index"
-    },
-
     {
       "source": "/api/messages/([^/]+)",
-      "destination": "/api/messages/$1/database"
+      "destination": "/api/messages"
     },
     {
       "source": "/api/messages",
-      "destination": "/api/messages/database"
+      "destination": "/api/messages"
     },
     {
       "source": "/api/theme",

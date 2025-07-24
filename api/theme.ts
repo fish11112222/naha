@@ -1,128 +1,152 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { z } from 'zod';
 
-// Inline type definition to avoid import issues
-interface ChatTheme {
-  id: number;
+interface Theme {
+  id: string;
   name: string;
-  primaryColor: string;
-  secondaryColor: string;
-  backgroundColor: string;
-  messageBackgroundSelf: string;
-  messageBackgroundOther: string;
-  textColor: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    background: string;
+    text: string;
+    border: string;
+  };
 }
 
-// Global storage declarations
-declare global {
-  var globalThemes: ChatTheme[] | undefined;
-  var globalCurrentTheme: string | undefined;
+const THEMES: Theme[] = [
+  {
+    id: 'classic-blue',
+    name: 'Classic Blue',
+    colors: {
+      primary: '#3b82f6',
+      secondary: '#1e40af',
+      background: '#f8fafc',
+      text: '#1f2937',
+      border: '#e5e7eb'
+    }
+  },
+  {
+    id: 'sunset-orange',
+    name: 'Sunset Orange',
+    colors: {
+      primary: '#f97316',
+      secondary: '#ea580c',
+      background: '#fffbeb',
+      text: '#92400e',
+      border: '#fed7aa'
+    }
+  },
+  {
+    id: 'forest-green',
+    name: 'Forest Green',
+    colors: {
+      primary: '#059669',
+      secondary: '#047857',
+      background: '#f0fdf4',
+      text: '#065f46',
+      border: '#bbf7d0'
+    }
+  },
+  {
+    id: 'purple-dreams',
+    name: 'Purple Dreams',
+    colors: {
+      primary: '#9333ea',
+      secondary: '#7c3aed',
+      background: '#faf5ff',
+      text: '#581c87',
+      border: '#ddd6fe'
+    }
+  }
+];
+
+// Fallback storage
+const SHARED_THEME_KEY = 'VERCEL_SHARED_THEME_GLOBAL';
+const DEFAULT_THEME = 'classic-blue';
+
+function getCurrentTheme(): string {
+  if (!(global as any)[SHARED_THEME_KEY]) {
+    (global as any)[SHARED_THEME_KEY] = DEFAULT_THEME;
+  }
+  return (global as any)[SHARED_THEME_KEY];
 }
 
-// Enable CORS
+function setCurrentTheme(themeId: string): void {
+  (global as any)[SHARED_THEME_KEY] = themeId;
+}
+
 function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 }
 
-// Initialize global theme storage
-function getGlobalThemes(): ChatTheme[] {
-  if (!global.globalThemes) {
-    global.globalThemes = [
-      {
-        id: 1,
-        name: "Classic Blue",
-        primaryColor: "#3b82f6",
-        secondaryColor: "#1e40af", 
-        backgroundColor: "#ffffff",
-        messageBackgroundSelf: "#3b82f6",
-        messageBackgroundOther: "#f1f5f9",
-        textColor: "#1e293b"
-      },
-      {
-        id: 2,
-        name: "Sunset Orange",
-        primaryColor: "#f97316",
-        secondaryColor: "#ea580c",
-        backgroundColor: "#ffffff", 
-        messageBackgroundSelf: "#f97316",
-        messageBackgroundOther: "#fed7aa",
-        textColor: "#9a3412"
-      },
-      {
-        id: 3,
-        name: "Forest Green", 
-        primaryColor: "#059669",
-        secondaryColor: "#047857",
-        backgroundColor: "#ffffff",
-        messageBackgroundSelf: "#059669", 
-        messageBackgroundOther: "#bbf7d0",
-        textColor: "#064e3b"
-      },
-      {
-        id: 4,
-        name: "Purple Dreams",
-        primaryColor: "#9333ea",
-        secondaryColor: "#7c3aed",
-        backgroundColor: "#ffffff",
-        messageBackgroundSelf: "#9333ea",
-        messageBackgroundOther: "#e9d5ff",
-        textColor: "#581c87"
-      }
-    ];
-  }
-  return global.globalThemes;
-}
-
-function getCurrentTheme(): string {
-  if (!global.globalCurrentTheme) {
-    global.globalCurrentTheme = "Classic Blue";
-  }
-  return global.globalCurrentTheme;
-}
+const themeSchema = z.object({
+  themeId: z.string().min(1, "กรุณาระบุ ID ของธีม"),
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Enable CORS first
   enableCors(res);
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
-  if (req.method === 'GET') {
-    const themes = getGlobalThemes();
-    const currentThemeName = getCurrentTheme();
-    const activeTheme = themes.find(t => t.name === currentThemeName) || themes[0];
-    return res.status(200).json({
-      currentTheme: activeTheme,
-      availableThemes: themes
-    });
-  }
-
-  if (req.method === 'POST' || req.method === 'PUT') {
-    try {
-      const themes = getGlobalThemes();
-      // Accept theme change request
-      const { themeId, themeName } = req.body;
-      const selectedTheme = themes.find(t => t.id === themeId || t.name === themeName);
-      
-      if (!selectedTheme) {
-        return res.status(400).json({ message: 'ไม่พบธีมที่เลือก' });
-      }
-      
-      // Update current theme in global storage
-      global.globalCurrentTheme = selectedTheme.name;
+  try {
+    if (req.method === 'GET') {
+      const currentThemeId = getCurrentTheme();
+      const currentTheme = THEMES.find(t => t.id === currentThemeId) || THEMES[0];
       
       return res.status(200).json({
-        message: 'เปลี่ยนธีมเรียบร้อยแล้ว',
-        currentTheme: selectedTheme,
-        availableThemes: themes
+        currentTheme: currentTheme,
+        availableThemes: THEMES
       });
-    } catch (error) {
-      return res.status(500).json({ message: 'เกิดข้อผิดพลาดในการเปลี่ยนธีม' });
     }
+    
+    if (req.method === 'POST') {
+      let requestBody = req.body;
+      if (typeof req.body === 'string') {
+        try {
+          requestBody = JSON.parse(req.body);
+        } catch (e) {
+          return res.status(400).json({ message: 'รูปแบบข้อมูลไม่ถูกต้อง' });
+        }
+      }
+      
+      if (!requestBody || typeof requestBody !== 'object') {
+        return res.status(400).json({ message: 'ข้อมูลไม่ครบถ้วน' });
+      }
+      
+      const validatedData = themeSchema.parse(requestBody);
+      const selectedTheme = THEMES.find(t => t.id === validatedData.themeId);
+      
+      if (!selectedTheme) {
+        return res.status(404).json({ message: 'ไม่พบธีมที่เลือก' });
+      }
+      
+      setCurrentTheme(validatedData.themeId);
+      
+      console.log(`Theme changed to: ${validatedData.themeId}`);
+      return res.status(200).json({
+        message: 'เปลี่ยนธีมสำเร็จ',
+        currentTheme: selectedTheme,
+        availableThemes: THEMES
+      });
+    }
+    
+    return res.status(405).json({ message: 'Method not allowed' });
+    
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        message: "ข้อมูลไม่ถูกต้อง", 
+        errors: error.errors 
+      });
+    }
+    
+    console.error('Theme error:', error);
+    return res.status(500).json({ message: 'เกิดข้อผิดพลาดในเซิร์ฟเวอร์' });
   }
-
-  return res.status(405).json({ message: 'Method not allowed' });
 }

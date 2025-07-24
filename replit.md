@@ -342,15 +342,16 @@ User prefers communication in Thai language for all interactions.
 ### Complete PostgreSQL Database Implementation (July 24, 2025 - 3:15 PM)
 - ✅ **สร้าง PostgreSQL Database สำเร็จ**: ใช้ Replit Database Service
 - ✅ **อัปเดต Storage System**: เปลี่ยนจาก MemoryStorage เป็น DatabaseStorage
-- ✅ **สร้าง Database API Endpoints**:
-  - `/api/auth/signup-database.ts` - การสมัครสมาชิกผ่าน PostgreSQL
-  - `/api/auth/signin-database.ts` - การเข้าสู่ระบบผ่าน PostgreSQL
-  - `/api/messages/database.ts` - การจัดการข้อความผ่าน PostgreSQL
-  - `/api/messages/[id]/database.ts` - การแก้ไข/ลบข้อความผ่าน PostgreSQL
+- ✅ **สร้าง Consolidated API Endpoints** (ลดจำนวน serverless functions):
+  - `/api/auth.ts` - การสมัครสมาชิก/เข้าสู่ระบบรวมกัน (Signup & Signin)
+  - `/api/messages.ts` - การจัดการข้อความครบวงจร (GET, POST, PUT, DELETE)
+  - `/api/theme.ts` - การจัดการธีมแอปพลิเคชัน
 - ✅ **ทดสอบระบบสำเร็จ**:
-  - สร้างผู้ใช้: kuy@gmail.com (ID: 1), panida@gmail.com (ID: 2)
-  - ส่งข้อความ: "ระบบ Database พร้อมใช้งานแล้ว!" (ID: 2)
-  - ลบข้อความ: DELETE /api/messages/1 สำเร็จ (HTTP 204)
-- ✅ **อัปเดต vercel.json**: เปลี่ยน API routing ไปใช้ database endpoints
+  - ล็อกอิน: kuy@gmail.com สำเร็จ (ID: 1)
+  - ส่งข้อความ: "ทดสอบระบบ database API ใหม่" (ID: 4) 
+  - ลบข้อความ: DELETE /api/messages/4 สำเร็จ (HTTP 204)
+- ✅ **แก้ไข TypeScript Compilation Errors**: ลบไฟล์เก่าและใช้ conditional imports
+- ✅ **อัปเดต vercel.json**: ใช้ consolidated API endpoints (3 files แทน 12+ files)
 - ✅ **แก้ไขปัญหา Vercel Stateless Storage**: ข้อมูลจะ persist ใน PostgreSQL แทน memory
-- 🔧 **สถานะ**: พร้อม deploy บน Vercel โดยไม่มีปัญหา stateless storage อีกต่อไป
+- ✅ **Hybrid Storage System**: รองรับทั้ง PostgreSQL (production) และ fallback storage (development)
+- 🔧 **สถานะ**: พร้อม deploy บน Vercel โดยไม่มีปัญหา stateless storage และ function limits
