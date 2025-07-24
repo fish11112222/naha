@@ -14,9 +14,78 @@ type Message = {
   updatedAt: string | null;
 };
 
-// Global storage declarations
-declare global {
-  var globalMessages: Message[] | undefined;
+// Global storage key - using GLOBAL object instead of local module
+const SHARED_STORAGE_KEY = 'VERCEL_SHARED_MESSAGES_GLOBAL';
+
+// Initialize default data
+const DEFAULT_MESSAGES: Message[] = [
+  {
+    id: 1,
+    content: "สวัสดีครับ ยินดีต้อนรับสู่ห้องแชท!",
+    username: "Panida ใสใจ",
+    userId: 18581680,
+    createdAt: "2025-07-22T12:00:00.000Z",
+    updatedAt: null,
+    attachmentUrl: null,
+    attachmentType: null,
+    attachmentName: null
+  },
+  {
+    id: 2,
+    content: "สวัสดีครับ ผมชื่อ Kuy",
+    username: "kuyyy",
+    userId: 71157855,
+    createdAt: "2025-07-23T03:10:00.000Z",
+    updatedAt: null,
+    attachmentUrl: null,
+    attachmentType: null,
+    attachmentName: null
+  },
+  {
+    id: 3,
+    content: "แอปนี้ทำงานได้ดีมากเลย!",
+    username: "Panida ใสใจ",
+    userId: 18581680,
+    createdAt: "2025-07-23T03:15:00.000Z",
+    updatedAt: null,
+    attachmentUrl: null,
+    attachmentType: null,
+    attachmentName: null
+  }
+];
+
+// Shared storage functions that persist across all serverless function calls
+function getMessages(): Message[] {
+  if (!(global as any)[SHARED_STORAGE_KEY]) {
+    (global as any)[SHARED_STORAGE_KEY] = [...DEFAULT_MESSAGES];
+    console.log(`Initialized ${SHARED_STORAGE_KEY} with ${DEFAULT_MESSAGES.length} messages`);
+  }
+  return (global as any)[SHARED_STORAGE_KEY];
+}
+
+function saveMessages(messages: Message[]): void {
+  (global as any)[SHARED_STORAGE_KEY] = messages;
+  console.log(`Saved ${messages.length} messages to ${SHARED_STORAGE_KEY}`);
+  
+  // Legacy compatibility
+  if ((global as any).globalMessages !== undefined) {
+    (global as any).globalMessages = messages;
+  }
+}
+
+function generateMessageId(): number {
+  const messages = getMessages();
+  const existingIds = messages.map(m => m.id);
+  const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
+  const timestamp = Date.now();
+  const randomComponent = Math.floor(Math.random() * 1000);
+  const candidateId = Math.max(maxId + 1, timestamp % 1000000 + randomComponent);
+  
+  // Ensure ID is unique
+  if (existingIds.includes(candidateId)) {
+    return Math.max(...existingIds) + 1;
+  }
+  return candidateId;
 }
 
 // Enable CORS
@@ -25,64 +94,6 @@ function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
-}
-
-// Shared storage key for all serverless functions
-const STORAGE_KEY = 'vercel-messages-shared';
-
-// Initialize and get messages with shared storage
-function getMessages(): Message[] {
-  // Check if we have shared storage first
-  if (!(global as any)[STORAGE_KEY]) {
-    (global as any)[STORAGE_KEY] = [
-      {
-        id: 1,
-        content: "สวัสดีครับ ยินดีต้อนรับสู่ห้องแชท!",
-        username: "Panida ใสใจ",
-        userId: 18581680,
-        createdAt: "2025-07-22T12:00:00.000Z",
-        updatedAt: null,
-        attachmentUrl: null,
-        attachmentType: null,
-        attachmentName: null
-      },
-      {
-        id: 2,
-        content: "สวัสดีครับ ผมชื่อ Kuy",
-        username: "kuyyy",
-        userId: 71157855,
-        createdAt: "2025-07-23T03:10:00.000Z",
-        updatedAt: null,
-        attachmentUrl: null,
-        attachmentType: null,
-        attachmentName: null
-      },
-      {
-        id: 3,
-        content: "แอปนี้ทำงานได้ดีมากเลย!",
-        username: "Panida ใสใจ",
-        userId: 18581680,
-        createdAt: "2025-07-23T03:15:00.000Z",
-        updatedAt: null,
-        attachmentUrl: null,
-        attachmentType: null,
-        attachmentName: null
-      }
-    ];
-  }
-  
-  // Fallback to globalMessages for backward compatibility
-  if (!global.globalMessages) {
-    global.globalMessages = (global as any)[STORAGE_KEY];
-  }
-  
-  return (global as any)[STORAGE_KEY];
-}
-
-// Save messages to shared storage
-function saveMessages(messages: Message[]): void {
-  (global as any)[STORAGE_KEY] = messages;
-  global.globalMessages = messages;
 }
 
 const messageSchema = z.object({
@@ -135,11 +146,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       const validatedData = messageSchema.parse(requestBody);
       
-      // Generate a unique ID based on timestamp and current message count
-      const messages = getMessages();
-      const existingIds = messages.map(m => m.id);
-      const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
-      const newId = Math.max(maxId + 1, Date.now() % 1000000 + Math.floor(Math.random() * 1000));
+      // Generate a unique ID using shared storage
+      const newId = generateMessageId();
 
       const newMessage: Message = {
         id: newId,
