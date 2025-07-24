@@ -19,11 +19,11 @@
   "rewrites": [
     {
       "source": "/api/auth/signup",
-      "destination": "/api/auth/signup"
+      "destination": "/api/auth/signup-database"
     },
     {
       "source": "/api/auth/signin", 
-      "destination": "/api/auth/signin"
+      "destination": "/api/auth/signin-database"
     },
     {
       "source": "/api/users/count",
@@ -52,11 +52,11 @@
 
     {
       "source": "/api/messages/([^/]+)",
-      "destination": "/api/messages/$1/index"
+      "destination": "/api/messages/$1/database"
     },
     {
       "source": "/api/messages",
-      "destination": "/api/messages/index"
+      "destination": "/api/messages/database"
     },
     {
       "source": "/api/theme",

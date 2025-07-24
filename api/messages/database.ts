@@ -3,35 +3,6 @@ import { z } from 'zod';
 import { db, messages } from '../db';
 import { desc } from 'drizzle-orm';
 
-// Type definitions
-type Message = {
-  id: number;
-  content: string;
-  username: string;
-  userId: number;
-  attachmentUrl: string | null;
-  attachmentType: string | null;
-  attachmentName: string | null;
-  createdAt: Date;
-  updatedAt: Date | null;
-};
-
-function generateMessageId(): number {
-  const messages = getMessages();
-  const existingIds = messages.map(m => m.id);
-  const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
-  const timestamp = Date.now();
-  const randomComponent = Math.floor(Math.random() * 1000);
-  const candidateId = Math.max(maxId + 1, timestamp % 1000000 + randomComponent);
-  
-  // Ensure ID is unique
-  if (existingIds.includes(candidateId)) {
-    return Math.max(...existingIds) + 1;
-  }
-  return candidateId;
-}
-
-// Enable CORS
 function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -40,21 +11,19 @@ function enableCors(res: VercelResponse) {
 }
 
 const messageSchema = z.object({
-  content: z.string().min(0, ""),  // Allow empty content for image/gif only messages
+  content: z.string().min(0, "").optional().default(""),
   username: z.string().min(1),
   userId: z.number(),
   attachmentUrl: z.string().optional(),
   attachmentType: z.enum(['image', 'file', 'gif']).optional(),
   attachmentName: z.string().optional(),
 }).refine((data) => {
-  // Either content must be provided OR attachment must be provided
-  return data.content.trim().length > 0 || (data.attachmentUrl && data.attachmentType);
+  return (data.content && data.content.trim().length > 0) || (data.attachmentUrl && data.attachmentType);
 }, {
   message: "กรุณาระบุข้อความหรือแนบไฟล์",
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Enable CORS first
   enableCors(res);
 
   if (req.method === 'OPTIONS') {
@@ -65,14 +34,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (req.method === 'GET') {
       const limit = parseInt(req.query.limit as string) || 50;
-      const messages = getMessages();
-      const paginatedMessages = messages.slice(-limit);
-      console.log(`Returning ${paginatedMessages.length} messages from global store`);
-      return res.status(200).json(paginatedMessages);
+      const allMessages = await db.select().from(messages).orderBy(desc(messages.createdAt)).limit(limit);
+      const sortedMessages = allMessages.reverse();
+      console.log(`Retrieved ${sortedMessages.length} messages from database`);
+      return res.status(200).json(sortedMessages);
     }
     
     if (req.method === 'POST') {
-      // Handle different body parsing scenarios in Vercel
       let requestBody = req.body;
       if (typeof req.body === 'string') {
         try {
@@ -82,34 +50,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
       
-      // Additional validation to ensure we have the required fields
       if (!requestBody || typeof requestBody !== 'object') {
         return res.status(400).json({ message: 'ข้อมูลไม่ครบถ้วน' });
       }
       
       const validatedData = messageSchema.parse(requestBody);
       
-      // Generate a unique ID using shared storage
-      const newId = generateMessageId();
-
-      const newMessage: Message = {
-        id: newId,
-        content: validatedData.content.trim(),
+      const result = await db.insert(messages).values({
+        content: validatedData.content || "",
         username: validatedData.username,
         userId: validatedData.userId,
         attachmentUrl: validatedData.attachmentUrl || null,
         attachmentType: validatedData.attachmentType || null,
         attachmentName: validatedData.attachmentName || null,
-        createdAt: new Date().toISOString(),
-        updatedAt: null
-      };
+      }).returning();
       
-      // Add to global storage
-      const currentMessages = getMessages();
-      currentMessages.push(newMessage);
-      saveMessages(currentMessages);
-      
-      console.log(`Created message ${newId}, total messages: ${currentMessages.length}`);
+      const newMessage = result[0];
+      console.log(`Created message ${newMessage.id} in database`);
       return res.status(201).json(newMessage);
     }
     
@@ -123,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
     
-    console.error('Messages error:', error);
+    console.error('Messages database error:', error);
     return res.status(500).json({ message: 'เกิดข้อผิดพลาดในเซิร์ฟเวอร์' });
   }
 }
