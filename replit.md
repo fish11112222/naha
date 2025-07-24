@@ -290,6 +290,16 @@ User prefers communication in Thai language for all interactions.
 - ✅ ยืนยันระบบ login/signup ทำงานได้บน https://sus4-red.vercel.app/
 - ✅ ระบบรองรับ dual deployment (Replit + Vercel) อย่างสมบูรณ์
 
+### Vercel Delete Message Fix (July 24, 2025 - 6:35 AM)
+- ✅ ระบุปัญหาการลบข้อความบน Vercel - Serverless Functions Stateless Issue
+- ✅ ปรับปรุง global storage ให้ใช้ global.globalMessages แยกต่างหาก
+- ✅ เพิ่ม debug logging ละเอียดเพื่อ track function instances
+- ✅ ปรับปรุงการสร้าง ID ให้ unique และ persistent มากขึ้น
+- ✅ แก้ไข API handlers ให้ update ข้อมูลใน both global stores
+- ✅ ทดสอบยืนยัน: ล็อกอิน (✓), ส่งข้อความ (✓), ดึงข้อความ (✓)
+- ⚠️ ปัญหาการลบข้อความบน Vercel: ต้อง deploy โค้ดใหม่เพื่อให้แก้ไขมีผล
+- ✅ สาเหตุ: Function instances แตกต่างกันไม่แชร์ global storage ใน serverless environment
+
 ### Final Vercel Deployment Fix (July 24, 2025 - 12:20 PM)
 - ✅ แก้ไข vercel.json routing conflicts - ลบ catch-all rule ที่ทำให้ DELETE ไม่ทำงาน
 - ✅ อัปเดต API handlers ให้รองรับ DELETE method อย่างถูกต้อง

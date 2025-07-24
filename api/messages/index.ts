@@ -10,9 +10,11 @@ function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 }
 
-// Use shared global store
+// Use shared global store and direct reference to global.globalMessages
 const globalStore = getGlobalStore();
-const messages = globalStore.messages;
+function getMessages() {
+  return global.globalMessages || globalStore.messages;
+}
 
 const messageSchema = z.object({
   content: z.string().min(0, ""),  // Allow empty content for image/gif only messages
@@ -40,7 +42,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (req.method === 'GET') {
       const limit = parseInt(req.query.limit as string) || 50;
+      const messages = getMessages();
       const paginatedMessages = messages.slice(-limit);
+      console.log(`Returning ${paginatedMessages.length} messages from global store`);
       return res.status(200).json(paginatedMessages);
     }
     
@@ -62,8 +66,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       const validatedData = messageSchema.parse(requestBody);
       
+      // Generate a unique ID based on timestamp and current message count
+      const messages = getMessages();
+      const existingIds = messages.map(m => m.id);
+      const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
+      const newId = Math.max(maxId + 1, Date.now() % 1000000 + Math.floor(Math.random() * 1000));
+
       const newMessage: Message = {
-        id: Math.floor(Math.random() * 1000000),
+        id: newId,
         content: validatedData.content.trim(),
         username: validatedData.username,
         userId: validatedData.userId,
@@ -74,8 +84,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updatedAt: null
       };
       
+      // Add to both global storage mechanisms
+      global.globalMessages = global.globalMessages || [];
+      global.globalMessages.push(newMessage);
       globalStore.messages.push(newMessage);
       globalStore.lastModified = Date.now();
+      
+      console.log(`Created message ${newId}, total messages: ${global.globalMessages.length}`);
       return res.status(201).json(newMessage);
     }
     

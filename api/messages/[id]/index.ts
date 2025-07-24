@@ -10,9 +10,11 @@ function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 }
 
-// Use shared global store
+// Use shared global store and direct reference to global.globalMessages
 const globalStore = getGlobalStore();
-const messages = globalStore.messages;
+function getMessages() {
+  return global.globalMessages || globalStore.messages;
+}
 
 const updateMessageSchema = z.object({
   content: z.string().min(1),
@@ -52,18 +54,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       const validatedData = updateMessageSchema.parse(requestBody);
       
+      const messages = getMessages();
       const messageIndex = messages.findIndex(m => m.id === messageId);
       if (messageIndex === -1) {
         return res.status(404).json({ message: 'ไม่พบข้อความ' });
       }
       
-      // Update the message in global store
+      // Update the message in both global stores
+      if (global.globalMessages) {
+        global.globalMessages[messageIndex].content = validatedData.content;
+        global.globalMessages[messageIndex].updatedAt = new Date().toISOString();
+      }
       globalStore.messages[messageIndex].content = validatedData.content;
       globalStore.messages[messageIndex].updatedAt = new Date().toISOString();
       globalStore.lastModified = Date.now();
       
       return res.status(200).json({ 
-        ...globalStore.messages[messageIndex], 
+        ...messages[messageIndex], 
         message: 'แก้ไขข้อความเรียบร้อยแล้ว' 
       });
     }
@@ -76,9 +83,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ message: 'ต้องระบุ User ID' });
       }
       
+      const messages = getMessages();
+      console.log(`Looking for message ID ${messageId} in ${messages.length} messages`);
+      console.log('Available message IDs:', messages.map(m => m.id));
+      console.log('Global messages count:', global.globalMessages?.length || 0);
+      console.log('Store messages count:', globalStore.messages.length);
+      
       const messageIndex = messages.findIndex(m => m.id === messageId);
       if (messageIndex === -1) {
-        return res.status(404).json({ message: 'ไม่พบข้อความ' });
+        return res.status(404).json({ 
+          message: 'ไม่พบข้อความ',
+          debug: {
+            requestedId: messageId,
+            availableIds: messages.map(m => m.id),
+            messageCount: messages.length,
+            globalCount: global.globalMessages?.length || 0,
+            storeCount: globalStore.messages.length
+          }
+        });
       }
       
       // Check if user owns this message
@@ -86,10 +108,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ message: 'คุณไม่สามารถลบข้อความของผู้อื่นได้' });
       }
       
-      // Remove the message from global store and update timestamp
+      console.log(`Deleting message ${messageId} by user ${userId}`);
+      // Remove the message from both global stores
+      if (global.globalMessages) {
+        const globalIndex = global.globalMessages.findIndex(m => m.id === messageId);
+        if (globalIndex !== -1) {
+          global.globalMessages.splice(globalIndex, 1);
+        }
+      }
       globalStore.messages.splice(messageIndex, 1);
       globalStore.lastModified = Date.now();
       
+      console.log(`Message deleted. Remaining: ${global.globalMessages?.length || 0} global, ${globalStore.messages.length} store`);
       return res.status(204).end();
     }
     
