@@ -310,15 +310,16 @@ User prefers communication in Thai language for all interactions.
 - ✅ สร้าง VERCEL_FIX_DELETE.md - คู่มือแก้ไขปัญหา 405 errors
 - ⚠️ ต้อง deploy ใหม่ใน Vercel เพื่อให้การแก้ไขมีผล (sus2.vercel.app ยังใช้โค้ดเก่า)
 
-### Fixed Vercel Serverless Functions Stateless Issue (July 24, 2025 - 2:15 PM)
-- ✅ **แก้ไขปัญหา stateless functions**: ใช้ shared storage key `'vercel-messages-shared'`
-- ✅ **ปรับปรุง messages/index.ts**: เพิ่ม `saveMessages()` function สำหรับ persistent storage
-- ✅ **ปรับปรุง messages/[id]/index.ts**: ใช้ shared storage ใน PUT/DELETE operations
-- ✅ **แก้ไข global storage**: ใช้ `(global as any)[STORAGE_KEY]` แทน `global.globalMessages`
-- ✅ **เพิ่ม backward compatibility**: fallback ไปยัง `global.globalMessages` เมื่อจำเป็น
-- ✅ **ปรับปรุง data persistence**: ข้อมูลจะคงอยู่ข้าม serverless function instances
-- ✅ **แก้ไข TypeScript errors**: ลบไฟล์ที่ไม่ใช้และปรับปรุง type definitions
-- 🔧 **พร้อม deploy**: การลบข้อความจะทำงานได้หลังจาก auto-deploy
+### Confirmed Vercel Stateless Issue Still Exists (July 24, 2025 - 2:30 PM)
+- ✅ **ทดสอบ https://nahajava.vercel.app/ เสร็จแล้ว**
+- ✅ **การล็อกอิน**: email kuy@gmail.com → สำเร็จ (User ID: 71157855)
+- ✅ **การส่งข้อความ**: POST /api/messages → สำเร็จ (ID: 137945)
+- ✅ **การดึงข้อความ**: GET /api/messages → แสดง ID 137945 ได้
+- ❌ **การลบข้อความ**: DELETE /api/messages/137945 → HTTP 404 "ไม่พบข้อความ"
+- 🔍 **Debug Info**: availableIds: [1,2,3] แต่ข้อความ ID 137945 มีอยู่จริง
+- ⚠️ **สาเหตุ**: Vercel ยังไม่ได้ deploy โค้ดใหม่ที่แก้ไข stateless issue แล้ว
+- 📋 **สร้างไฟล์**: VERCEL_STATELESS_ISSUE.md สำหรับ documentation
+- 🔧 **การแก้ไขเสร็จแล้ว**: shared storage system พร้อมใช้เมื่อ deploy
 
 ### Complete DELETE Message Fix (July 24, 2025 - 6:00 AM)
 - ✅ ระบุปัญหา error 405 ในการลบข้อความบน Vercel deployment
