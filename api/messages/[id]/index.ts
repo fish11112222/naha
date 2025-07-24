@@ -136,7 +136,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log(`Looking for message ID ${messageId} in ${messages.length} messages`);
       console.log('Available message IDs:', messages.map(m => m.id));
       console.log('Global messages count:', global.globalMessages?.length || 0);
-      console.log('Store messages count:', globalStore.messages.length);
       
       const messageIndex = messages.findIndex(m => m.id === messageId);
       if (messageIndex === -1) {
@@ -146,8 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             requestedId: messageId,
             availableIds: messages.map(m => m.id),
             messageCount: messages.length,
-            globalCount: global.globalMessages?.length || 0,
-            storeCount: globalStore.messages.length
+            globalCount: global.globalMessages?.length || 0
           }
         });
       }

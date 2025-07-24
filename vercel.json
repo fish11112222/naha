@@ -49,10 +49,7 @@
       "source": "/api/users",
       "destination": "/api/users/index"
     },
-    {
-      "source": "/api/message-actions",
-      "destination": "/api/message-actions"
-    },
+
     {
       "source": "/api/messages/([^/]+)",
       "destination": "/api/messages/$1/index"
