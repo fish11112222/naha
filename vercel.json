@@ -1,0 +1,96 @@
+{
+  "version": 2,
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "npm install && cd api && npm install && cd ../client && npm install",
+  "framework": "vite",
+
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/auth/signup",
+      "destination": "/api/auth/signup"
+    },
+    {
+      "source": "/api/auth/signin", 
+      "destination": "/api/auth/signin"
+    },
+    {
+      "source": "/api/users/count",
+      "destination": "/api/users/count"
+    },
+    {
+      "source": "/api/users/online",
+      "destination": "/api/users/online"
+    },
+    {
+      "source": "/api/users/([^/]+)/activity",
+      "destination": "/api/users/$1/activity"
+    },
+    {
+      "source": "/api/users/([^/]+)/profile",
+      "destination": "/api/users/$1/profile"
+    },
+    {
+      "source": "/api/users/([^/]+)",
+      "destination": "/api/users/$1/profile"
+    },
+    {
+      "source": "/api/users",
+      "destination": "/api/users/index"
+    },
+    {
+      "source": "/api/message-actions",
+      "destination": "/api/message-actions"
+    },
+    {
+      "source": "/api/messages/([^/]+)",
+      "destination": "/api/messages/$1/index"
+    },
+    {
+      "source": "/api/messages",
+      "destination": "/api/messages/index"
+    },
+    {
+      "source": "/api/theme",
+      "destination": "/api/theme"
+    },
+    {
+      "source": "/((?!api).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "functions": {
+    "api/messages/[id]/index.ts": {
+      "methods": ["GET", "PUT", "DELETE", "OPTIONS"]
+    },
+    "api/auth/signin.ts": {
+      "methods": ["POST", "OPTIONS"]
+    },
+    "api/auth/signup.ts": {
+      "methods": ["POST", "OPTIONS"]
+    },
+    "api/messages/index.ts": {
+      "methods": ["GET", "POST", "OPTIONS"]
+    },
+    "api/theme.ts": {
+      "methods": ["GET", "PUT", "OPTIONS"]
+    },
+    "api/users/index.ts": {
+      "methods": ["GET", "OPTIONS"]
+    },
+    "api/message-actions.ts": {
+      "methods": ["DELETE", "OPTIONS"]
+    }
+  }
+}
