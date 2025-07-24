@@ -1,6 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { getGlobalStore, type Message } from '../shared-storage';
+
+// Type definitions
+type Message = {
+  id: number;
+  content: string;
+  username: string;
+  userId: number;
+  attachmentUrl: string | null;
+  attachmentType: string | null;
+  attachmentName: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+};
+
+// Global storage declarations
+declare global {
+  var globalMessages: Message[] | undefined;
+}
 
 // Enable CORS
 function enableCors(res: VercelResponse) {
@@ -10,10 +27,46 @@ function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 }
 
-// Use shared global store and direct reference to global.globalMessages
-const globalStore = getGlobalStore();
-function getMessages() {
-  return global.globalMessages || globalStore.messages;
+// Initialize and get messages
+function getMessages(): Message[] {
+  if (!global.globalMessages) {
+    global.globalMessages = [
+      {
+        id: 1,
+        content: "สวัสดีครับ ยินดีต้อนรับสู่ห้องแชท!",
+        username: "Panida ใสใจ",
+        userId: 18581680,
+        createdAt: "2025-07-22T12:00:00.000Z",
+        updatedAt: null,
+        attachmentUrl: null,
+        attachmentType: null,
+        attachmentName: null
+      },
+      {
+        id: 2,
+        content: "สวัสดีครับ ผมชื่อ Kuy",
+        username: "kuyyy",
+        userId: 71157855,
+        createdAt: "2025-07-23T03:10:00.000Z",
+        updatedAt: null,
+        attachmentUrl: null,
+        attachmentType: null,
+        attachmentName: null
+      },
+      {
+        id: 3,
+        content: "แอปนี้ทำงานได้ดีมากเลย!",
+        username: "Panida ใสใจ",
+        userId: 18581680,
+        createdAt: "2025-07-23T03:15:00.000Z",
+        updatedAt: null,
+        attachmentUrl: null,
+        attachmentType: null,
+        attachmentName: null
+      }
+    ];
+  }
+  return global.globalMessages;
 }
 
 const messageSchema = z.object({
@@ -84,13 +137,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updatedAt: null
       };
       
-      // Add to both global storage mechanisms
-      global.globalMessages = global.globalMessages || [];
-      global.globalMessages.push(newMessage);
-      globalStore.messages.push(newMessage);
-      globalStore.lastModified = Date.now();
+      // Add to global storage
+      const currentMessages = getMessages();
+      currentMessages.push(newMessage);
       
-      console.log(`Created message ${newId}, total messages: ${global.globalMessages.length}`);
+      console.log(`Created message ${newId}, total messages: ${currentMessages.length}`);
       return res.status(201).json(newMessage);
     }
     

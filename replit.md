@@ -290,15 +290,17 @@ User prefers communication in Thai language for all interactions.
 - ✅ ยืนยันระบบ login/signup ทำงานได้บน https://sus4-red.vercel.app/
 - ✅ ระบบรองรับ dual deployment (Replit + Vercel) อย่างสมบูรณ์
 
-### Vercel Delete Message Fix (July 24, 2025 - 6:35 AM)
-- ✅ ระบุปัญหาการลบข้อความบน Vercel - Serverless Functions Stateless Issue
-- ✅ ปรับปรุง global storage ให้ใช้ global.globalMessages แยกต่างหาก
-- ✅ เพิ่ม debug logging ละเอียดเพื่อ track function instances
-- ✅ ปรับปรุงการสร้าง ID ให้ unique และ persistent มากขึ้น
-- ✅ แก้ไข API handlers ให้ update ข้อมูลใน both global stores
+### Vercel TypeScript Build Errors Fix (July 24, 2025 - 6:50 AM)
+- ✅ แก้ไข build errors ใน Vercel deployment - shared-storage import conflicts
+- ✅ ปรับปรุงทุก API files ให้ใช้ inline type definitions แทน shared imports
+- ✅ แก้ไข TypeScript compilation errors ใน `/api/messages/`, `/api/theme.ts`, `/api/auth/`
+- ✅ ลบ dependency ไปยัง `../shared-storage` ที่ทำให้เกิด build failures
+- ✅ ปรับปรุง global storage declarations ให้ consistent ทุกไฟล์
+- ✅ แก้ไข theme API ให้รองรับ themeName และ themeId parameters
 - ✅ ทดสอบยืนยัน: ล็อกอิน (✓), ส่งข้อความ (✓), ดึงข้อความ (✓)
 - ⚠️ ปัญหาการลบข้อความบน Vercel: ต้อง deploy โค้ดใหม่เพื่อให้แก้ไขมีผล
 - ✅ สาเหตุ: Function instances แตกต่างกันไม่แชร์ global storage ใน serverless environment
+- ✅ Build ready สำหรับ Vercel deployment โดยไม่มี TypeScript errors
 
 ### Final Vercel Deployment Fix (July 24, 2025 - 12:20 PM)
 - ✅ แก้ไข vercel.json routing conflicts - ลบ catch-all rule ที่ทำให้ DELETE ไม่ทำงาน

@@ -1,6 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { getGlobalStore } from '../../shared-storage';
+
+// Type definitions
+type Message = {
+  id: number;
+  content: string;
+  username: string;
+  userId: number;
+  attachmentUrl: string | null;
+  attachmentType: string | null;
+  attachmentName: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+};
+
+// Global storage declarations
+declare global {
+  var globalMessages: Message[] | undefined;
+}
 
 // Enable CORS
 function enableCors(res: VercelResponse) {
@@ -10,10 +27,46 @@ function enableCors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 }
 
-// Use shared global store and direct reference to global.globalMessages
-const globalStore = getGlobalStore();
-function getMessages() {
-  return global.globalMessages || globalStore.messages;
+// Initialize and get messages
+function getMessages(): Message[] {
+  if (!global.globalMessages) {
+    global.globalMessages = [
+      {
+        id: 1,
+        content: "สวัสดีครับ ยินดีต้อนรับสู่ห้องแชท!",
+        username: "Panida ใสใจ",
+        userId: 18581680,
+        createdAt: "2025-07-22T12:00:00.000Z",
+        updatedAt: null,
+        attachmentUrl: null,
+        attachmentType: null,
+        attachmentName: null
+      },
+      {
+        id: 2,
+        content: "สวัสดีครับ ผมชื่อ Kuy",
+        username: "kuyyy",
+        userId: 71157855,
+        createdAt: "2025-07-23T03:10:00.000Z",
+        updatedAt: null,
+        attachmentUrl: null,
+        attachmentType: null,
+        attachmentName: null
+      },
+      {
+        id: 3,
+        content: "แอปนี้ทำงานได้ดีมากเลย!",
+        username: "Panida ใสใจ",
+        userId: 18581680,
+        createdAt: "2025-07-23T03:15:00.000Z",
+        updatedAt: null,
+        attachmentUrl: null,
+        attachmentType: null,
+        attachmentName: null
+      }
+    ];
+  }
+  return global.globalMessages;
 }
 
 const updateMessageSchema = z.object({
@@ -60,17 +113,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ message: 'ไม่พบข้อความ' });
       }
       
-      // Update the message in both global stores
-      if (global.globalMessages) {
-        global.globalMessages[messageIndex].content = validatedData.content;
-        global.globalMessages[messageIndex].updatedAt = new Date().toISOString();
-      }
-      globalStore.messages[messageIndex].content = validatedData.content;
-      globalStore.messages[messageIndex].updatedAt = new Date().toISOString();
-      globalStore.lastModified = Date.now();
+      // Update the message in global storage
+      const currentMessages = getMessages();
+      currentMessages[messageIndex].content = validatedData.content;
+      currentMessages[messageIndex].updatedAt = new Date().toISOString();
       
       return res.status(200).json({ 
-        ...messages[messageIndex], 
+        ...currentMessages[messageIndex], 
         message: 'แก้ไขข้อความเรียบร้อยแล้ว' 
       });
     }
@@ -109,17 +158,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       
       console.log(`Deleting message ${messageId} by user ${userId}`);
-      // Remove the message from both global stores
-      if (global.globalMessages) {
-        const globalIndex = global.globalMessages.findIndex(m => m.id === messageId);
-        if (globalIndex !== -1) {
-          global.globalMessages.splice(globalIndex, 1);
-        }
-      }
-      globalStore.messages.splice(messageIndex, 1);
-      globalStore.lastModified = Date.now();
+      // Remove the message from global storage
+      const currentMessages = getMessages();
+      currentMessages.splice(messageIndex, 1);
       
-      console.log(`Message deleted. Remaining: ${global.globalMessages?.length || 0} global, ${globalStore.messages.length} store`);
+      console.log(`Message deleted. Remaining: ${currentMessages.length} messages`);
       return res.status(204).end();
     }
     
