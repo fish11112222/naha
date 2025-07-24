@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a modern Thai chat application built with React (frontend) and Express.js backend, successfully migrated from Replit Agent to Replit environment. The application features real-time messaging, user authentication, theme customization, and a responsive design optimized for Thai language users. The project supports both Replit deployment (Express server) and Vercel deployment (serverless functions). **Updated 2025-07-23**: Fixed all Vercel API deployment issues (FUNCTION_INVOCATION_FAILED) by adding proper async/await, CORS headers, and runtime configuration.
+This is a modern Thai chat application built with React (frontend) and Express.js backend, successfully migrated from Replit Agent to Replit environment. The application features real-time messaging, user authentication, theme customization, and a responsive design optimized for Thai language users. The project supports both Replit deployment (Express server) and Vercel deployment (serverless functions). **Updated 2025-07-24**: Identified persistent Vercel stateless storage issue - message deletion fails due to serverless function isolation.
 
 ## User Preferences
 
@@ -338,3 +338,14 @@ User prefers communication in Thai language for all interactions.
 - ✅ Migration จาก Replit Agent เสร็จสมบูรณ์ - ครบทุกฟีเจอร์ทั้งหมด
 - ✅ ระบบพร้อมใช้งานใน Replit Environment อย่างสมบูรณ์
 - ✅ ผู้ใช้สามารถเริ่มพัฒนาและใช้งานได้ทันที
+
+### Final Vercel Stateless Issue Confirmation (July 24, 2025 - 3:05 PM)
+- 🔍 **ทดสอบยืนยันปัญหา Vercel Stateless Storage ล่าสุด**:
+- ✅ ล็อกอิน: kuy@gmail.com สำเร็จ (ID: 71157855)
+- ✅ ส่งข้อความ: "รักไหม" สำเร็จ (ID: 360593) - HTTP 201
+- ❌ ลบข้อความ: DELETE /api/messages/360593 ล้มเหลว - HTTP 404
+- 🔍 **Debug Info**: `availableIds: [1,2,3]` vs. เพิ่งส่ง ID 360593
+- ⚠️ **ยืนยันแล้ว**: Serverless Functions บน Vercel ไม่ share global storage
+- 📋 **สาเหตุ**: แต่ละ API call = instance แยกกัน → ข้อมูลไม่ persist
+- 🔧 **สถานะ**: ปัญหานี้เป็นข้อจำกัดพื้นฐานของ Serverless Architecture
+- 💡 **แนวทางแก้ไข**: ต้องใช้ External Database (PostgreSQL/Redis) แทน In-Memory Storage
