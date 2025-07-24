@@ -314,7 +314,8 @@ User prefers communication in Thai language for all interactions.
 - ✅ เพิ่ม `/api/message-actions` route สำหรับความเข้ากันได้กับ Vercel
 - ✅ ทดสอบสำเร็จ: ลบข้อความ ID 4 (HTTP 204) - ข้อความลดจาก 4 เป็น 3
 - ✅ อัพเดท vercel.json ให้รองรับ DELETE method สำหรับทุก endpoints
-- ✅ พร้อม deploy ใหม่ใน Vercel เพื่อให้การแก้ไขมีผลทันที (แก้ไข API endpoint แล้ว)
+- ✅ พร้อม deploy ใหม่ใน Vercel เพื่อให้การแก้ไขมีผลทันที
+- ✅ แก้ไข Vercel deployment error - ลบ invalid 'methods' property จาก functions config
 - ✅ ปุ่มแก้ไข/ลบอยู่ตำแหน่งที่ถูกต้อง (ข้างนอกกรอบข้อความ)
 - ✅ รองรับการใช้งานผ่านภาษาไทย
 - ✅ พร้อม deploy บน Vercel 100% โดยไม่มี errors
